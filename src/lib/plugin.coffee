@@ -44,13 +44,11 @@ class BasePlugin
 		# Return early if we are disabled
 		return @  if @isEnabled() is false
 
-		# Bind Events
-		@bindEvents()
-
 		# Chain
 		@
 
 	# Bind Events
+	# DocPad will trigger this when it is ready
 	bindEvents: ->
 		# Prepare
 		pluginInstance = @

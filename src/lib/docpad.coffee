@@ -1685,17 +1685,17 @@ class DocPad extends EventEmitterEnhanced
 		@
 
 	# Load PLugin
-	# next(err)
+	# next(err,pluginInstance)
 	loadPlugin: (fileFullPath,_next) ->
 		# Prepare
 		docpad = @
 		config = @config
 		locale = @getLocale()
-		next = (err) ->
+		next = (err,pluginInstance) ->
 			# Remove from slow plugins
 			delete docpad.slowPlugins[pluginName]
 			# Forward
-			return _next(err)
+			return _next(err,pluginInstance)
 
 		# Prepare variables
 		loader = new PluginLoader(
@@ -1756,7 +1756,7 @@ class DocPad extends EventEmitterEnhanced
 
 						# Create an instance
 						loader.create {}, (err,pluginInstance) ->
-							return next(err)  if err
+							return next(err,pluginInstance)  if err
 
 							# Add to plugin stores
 							docpad.loadedPlugins[loader.pluginName] = pluginInstance
@@ -1765,7 +1765,7 @@ class DocPad extends EventEmitterEnhanced
 							docpad.log 'debug', util.format(locale.pluginLoaded, pluginName)
 
 							# Forward
-							return next()
+							return next(null,pluginInstance)
 
 		# Chain
 		@
@@ -1775,6 +1775,7 @@ class DocPad extends EventEmitterEnhanced
 		# Prepare
 		docpad = @
 		locale = @getLocale()
+		newPlugins = {}
 
 		# Load Plugins
 		docpad.log 'debug', util.format(locale.pluginsLoadingFor, pluginsPath)
@@ -1799,11 +1800,22 @@ class DocPad extends EventEmitterEnhanced
 					return _nextFile(null,skip)
 
 				# Forward
-				docpad.loadPlugin fileFullPath, (err) ->
-					return nextFile(err,true)
+				docpad.loadPlugin fileFullPath, (err,pluginInstance) ->
+					return nextFile(err,true)  if err
+					newPlugins[pluginInstance.name] = pluginInstance  if pluginInstance
+					return nextFile(null,true)
 
 			# Next
 			next: (err) ->
+				# Check
+				return next(err)  if err
+
+				# Bind the plugin events in order of priority
+				sortedNewPlugins = _.sortBy newPlugins, (pluginInstance) -> return pluginInstance.priority
+				for pluginInstance in sortedNewPlugins
+					pluginInstance.bindEvents()
+
+				# Finish up
 				docpad.log 'debug', util.format(locale.pluginsLoadedFor, pluginsPath)
 				return next(err)
 		)
