@@ -809,6 +809,10 @@ class DocPad extends EventEmitterEnhanced
 		# A hash of event handlers
 		events: {}
 
+		# Blocks
+		# A hash of blocks
+		blocks: {}
+
 		# Regenerate Every
 		# Performs a rengeraete every x milliseconds, useful for always having the latest data
 		regenerateEvery: false
